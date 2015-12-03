@@ -2,48 +2,54 @@
 
 include 'Curl.php';
 
-$curl = new Curl("https://api.github.com/", "59f8623cc84c79e0dcd3705e7e2a2c2ed22aac88");
+$curl = new Curl("https://api.github.com/", "e4e777a90dec520e6d9bc42edbb05e88dfbf2733");
+
+if(isset($_REQUEST['repository']))
+    getCommits($curl, $_REQUEST['repository']);
+else
+    getRepos ($curl);
 
 
-$info = $curl->send("user/repos", "GET");
-$info = json_decode($info);
-
-
-foreach ($info as $value) {
-    $repo = getUtilInfo($curl, $value);
-    echo '<div class="repo">';
-    echo '<h3>'.$repo['name'] . "</h3>";
-    echo '<h4> data de creacio : ' . $repo['created_at'] . '</h4>';
-    echo '<h4> ultima actualitzacio : ' . $repo['updated_at'] . '</h4>';
-//    print_r($repo['commits']);
+function getRepos($curl){
+    $info = $curl->send("user/repos", "GET");
     
-    echo '<div class="commits">';
-    foreach ($repo['commits'] as $commit) {
-       echo '<div>' . $commit->sha . " " . $commit->commit->message . " " . $commit->commit->author->email . '</div>';
+    echo '<img class="profile" src="' . $info[0]->owner->avatar_url . '"></img>';//https://avatars.githubusercontent.com/u/14833438?v=3"
+    echo '<a href="' . $info[0]->owner->html_url . '"><h2>' . $info[0]->owner->login . '\'s Repositories</h2></a>';
+    
+    echo '<ul class="list-group">';
+    foreach ($info as $value) {
+        $created = str_replace("T", " ", $value->created_at);
+        $created = str_replace("Z", "", $created);
+        $updated = str_replace("T", " ", $value->updated_at);
+        $updated = str_replace("Z", "", $updated);
+        
+        echo '<a href="'.$_SERVER['PHP_SELF'].'?repository=' . $value->name . '">';
+        echo '<li class="list-group-item row">';
+        echo '<h3 class="title col-sm-4">' . $value->name . '<i class="icon-' . strtolower($value->language) . '"></i></h3>';
+        echo '<h4 class="col-sm-4"> data de creacio : ' . $created . '</h4>';
+        echo '<h4 class="col-sm-4"> ultima actualitzacio : ' . $updated . '</h4>';
+        echo '</li></a>';
     }
-    echo '</div>';
     
-    echo '</div>';
+    echo '</ul>';
 }
 
-
-function getUtilInfo($curl, $info){
-   $repoInfo = array();
+function getCommits($curl, $repo){
+   $commits = $curl->send("repos/Abenitsi/".$repo."/commits", "GET");
    
-   $repoInfo['name'] = $info->name;
-   $repoInfo['created_at'] = $info->created_at;
-   $repoInfo['updated_at'] = $info->updated_at;
-   $repoInfo['language'] = $info->language;
+   echo '<a href="' . $_SERVER['PHP_SELF'] . '">Back</a>';
+   echo '<div class="repo">';
+   echo '<h3>' . $repo . '</h3>';
    
-//   $repoInfo['html_url'] = $info['html_url'];
+   echo '<div class="row">';
+   echo '<div class="col-sm-4"><h4>Sha</h4></div><div class="col-sm-4"><h4>Comment</h4></div><div class="col-sm-4"><h4>User Email</h4></div>';
+   echo '</div>';
+   foreach ($commits as $value) {
+       echo '<div class="row">';
+       echo '<div class="col-sm-4">' .$value->sha . '</div><div class="col-sm-4">' . $value->commit->message . '</div><div class="col-sm-4">' . $value->commit->author->email . '</div>';
+       echo '</div>';
+   }
    
-   $owner = $info->owner->login;
-   $commits = $curl->send("repos/$owner/".$repoInfo['name']."/commits", "GET");
-   
-   $repoInfo['commits'] = json_decode($commits);
-//   $repoInfo['git_commits_url'] = $info['git_commits_url'];
-   
-   return $repoInfo;
 }
 
 
@@ -52,37 +58,33 @@ function getUtilInfo($curl, $info){
 <html>
     <head>
         <title>Practica 10</title>
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
+        <link rel="stylesheet" href="css/font-mfizz.css">
+        
         <style>
-            .commits {
-                border-top: 1px solid grey;
-                display: none;
-                background: whitesmoke;
+            a, a:hover{
+                text-decoration: none;
+                color: black;
+            }
+            
+            i{
+                margin-left: 10px;
+            }
+            
+            img.profile {
+                width: 50px;
+                float: left;
+                margin-right: 15px;
+                margin-top: -15px;
+            }
+            
+            .row {
                 text-align: center;
             }
             
-            .repo {
-                border: 1px solid grey;
-                background: gainsboro;
+            h4{
+                margin-top: 20px;
             }
         </style>
-        
-        <script>
-            
-            lastDisplay = false;
-            window.onload = function(){
-                window.onclick = visible;
-            }
-            
-            function visible(event){
-                e = event || window.event;
-                
-                if(lastDisplay) lastDisplay.style.display = "none";
-                
-                div = e.srcElement;
-                lastDisplay = div.getElementsByClassName("commits")[0];
-//                console.log(div.getElementsByClassName("commits"));
-                lastDisplay.style.display = "block";
-            }
-        </script>
     </head>
 </html>

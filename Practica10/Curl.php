@@ -29,7 +29,7 @@ class Curl {
             
             $result = curl_exec($ch);
             
-            return $result;
+            return json_decode($result);
     }
     
 }
